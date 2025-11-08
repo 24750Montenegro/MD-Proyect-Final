@@ -132,7 +132,7 @@ def generar_claves(p, q):
 
 
 # Encripta un mensaje usando la clave publica ingresada por el usuario
-def encriptar(mensaje):
+def encriptar(mensaje, archivo):
     try:
         entrada = input("\nIngrese la clave publica (e n): ").strip().split()
         e = int(entrada[0])
@@ -150,25 +150,36 @@ def encriptar(mensaje):
         c = exp_modular(m, e, n)
         cifrados.append(c)
     
+    nuevoArchivo = f"salida/{archivo}.enc"
+    with open(nuevoArchivo, "w") as output:
+        output.write(",".join(map(str, cifrados)))
+    output.close()
+
     print("\n" + "="*50)
     print("MENSAJE ENCRIPTADO")
     print("="*50)
     print(f"Usando clave publica: (e={e}, n={n})")
     print(f"Mensaje: {mensaje}")
-    print(f"Cifrado: {cifrados}")
+    print(f"Mensaje cifrado en el archvio: {nuevoArchivo}")
     print("="*50)
     
     return cifrados
 
 
 # Desencripta un mensaje cifrado usando la clave privada ingresada por el usuario
-def desencriptar(cifrados):
+def desencriptar(cifrados_texto, archivo):
     try:
         entrada = input("\nIngrese la clave privada (d n): ").strip().split()
         d = int(entrada[0])
         n = int(entrada[1])
     except (ValueError, IndexError):
         print("Error: Formato invalido. Use: d n (ejemplo: 2753 3233)")
+        return None
+    
+    try:
+        cifrados = [int(x) for x in cifrados_texto.strip().split(",") if x]
+    except ValueError:
+        print("Error: Archivo .enc con formato invalido")
         return None
     
     # Aplicar la formula: m = c^d mod n
@@ -179,13 +190,18 @@ def desencriptar(cifrados):
     
     # Convertir codigos ASCII a caracteres
     mensaje = ''.join([chr(m) for m in descifrados])
+
+    nuevoArchivo = f"salida/{archivo}.txt"
+    output = open(nuevoArchivo, "w")
+    output.write(mensaje)
+    output.close()
     
     print("\n" + "="*50)
     print("MENSAJE DESENCRIPTADO")
     print("="*50)
     print(f"Usando clave privada: (d={d}, n={n})")
     print(f"Cifrado: {cifrados}")
-    print(f"Mensaje: {mensaje}")
+    print(f"Mensaje desencriptado en: {nuevoArchivo}")
     print("="*50)
     
     return mensaje
@@ -197,8 +213,8 @@ def menu():
         print("SISTEMA RSA - ENCRIPTACION")
         print("="*50)
         print("\n1. Generar claves (ingresar p, q)")
-        print("2. Encriptar mensaje")
-        print("3. Desencriptar mensaje")
+        print("2. Encriptar archivo")
+        print("3. Desencriptar archivo")
         print("4. Salir")
         print("="*50)
         
@@ -236,20 +252,25 @@ def menu():
                 print("Opcion no valida")
         
         elif opcion == "2":
-            mensaje = input("\nIngrese el mensaje a encriptar: ").strip()
-            
-            if mensaje:
-                encriptar(mensaje)
+            ruta = input("\nIngrese el nombre del archivo a encriptar sin .txt (Ej. texto): ").strip()
+            archivo = open(f"entrada/{ruta}.txt", "r")
+            data = archivo.read()
+            archivo.close()
+
+            if ruta:
+                encriptar(data, ruta)
             else:
                 print("Error: El mensaje no puede estar vacio")
         
         elif opcion == "3":
             try:
-                entrada = input("\nIngrese el texto cifrado [num1, num2, ...]: ").strip()
-                entrada = entrada.replace('[', '').replace(']', '')
-                cifrados = [int(x.strip()) for x in entrada.split(',')]
+                entrada = input("\nIngrese el nombre del archivo con el texto cifrado sin .enc (Ej. texto): ").strip()
+
+                archivo = open(f"entrada/{entrada}.enc", "r")
+                data = archivo.read()
+                archivo.close()
                 
-                desencriptar(cifrados)
+                desencriptar(data, entrada)
                 
             except ValueError:
                 print("Error: Formato invalido. Use: num1, num2, num3")
